@@ -11,7 +11,6 @@ module contains tools to:
 """
 
 import numpy as np
-import random
 import itertools
 import json
 
@@ -90,7 +89,8 @@ class Combact():
             contains the number of times the defended lost kk units when attacked by ii units and 
             defending with jj units.
         A_wins_prob (np.array): Similar to `A_wins_count` but storing probabilities.
-        A_wins_ci (np.array): Similar to `A_wins_count` but storing confidence interval.
+        A_wins_ci (np.array): Similar to `A_wins_count` but storing half-size confidence interval,
+            as estimated using the normal approximation.
     """
 
     def __init__( self, path_to_stats: str = None):
@@ -107,45 +107,61 @@ class Combact():
         self.a_wins_outcomes = a_wins_outcomes
         n_outcomes = len(a_wins_outcomes)
 
+        self.n_repeats = 0
         self.A_wins_count = np.zeros( (3,3,n_outcomes), dtype=int) 
         self.A_wins_prob = np.zeros( (3,3,n_outcomes))
         self.A_wins_ci = np.zeros( (3,3,n_outcomes))   
 
         # read stats by default
         self.load_stats()
+        self.verify_stats()
 
 
-    def get_stats( self, n_repeats: int, print_progress: bool = True):
-        """Run a combact simulation `n_repeats` times, compute its statistics and stores them into
-        the `A_wins_*` attributes.
+    def get_stats( self, n_repeats: int, batch_size: int = None, print_progress: bool = True, reset: bool = False):
+        """Run a combact simulation `n_repeats` times, and update statistics in the `A_wins_*` 
+        attributes. Note that the new simulations will add to those already run.
 
         Args:
             n_repeats (int): number of times the simulation is repeated.
             print_progress (bool): if True, print progress of calculation. Defaults to True.
         """
 
-        self.n_repeats = n_repeats
         def _print( msg):
             if print_progress:
                 print( msg)
 
-        for n_attack, n_defend in itertools.product( [1,2,3], [1,2,3]):
-            _print(f"Simulating (attack vs defend): {n_attack} vs {n_defend}")
+        if reset:
+            self.A_wins_count = 0*self.A_wins_count
+            self.n_repeats = 0
 
-            # count attack wins
-            a_wins = self.simulate(n_attack, n_defend, n_repeats, use_stats=False)
-            unique, _counts = np.unique(a_wins, return_counts=True)
-            
-            # count outcomes of attacking side winning 0, 1, 2, 3 units
-            counts = np.zeros((4,), dtype=int)
-            counts[unique] = _counts.astype(int)
-            probs = counts/n_repeats
+        if not batch_size:
+            batch_size = n_repeats
+        if batch_size>n_repeats:
+            batch_size = n_repeats
 
-            # store into matrices
-            ii, jj = n_attack-1, n_defend-1
-            self.A_wins_count[ii,jj,:] = counts
-            self.A_wins_prob[ii,jj,:] = probs
-            self.A_wins_ci[ii,jj,:] = 0.0
+        n_run = 0
+        while n_run < n_repeats:
+            n_run += batch_size
+
+            for n_attack, n_defend in itertools.product( [1,2,3], [1,2,3]):
+                _print(f"Simulating (attack vs defend): {n_attack} vs {n_defend}")
+
+                # count attack wins
+                a_wins = self.simulate(n_attack, n_defend, batch_size, use_stats=False)
+                unique, _counts = np.unique(a_wins, return_counts=True)
+                
+                # count outcomes of attacking side winning 0, 1, 2, 3 units
+                counts = np.zeros((4,), dtype=int)
+                counts[unique] = _counts.astype(int)
+
+                # store into matrices
+                ii, jj = n_attack-1, n_defend-1
+                self.A_wins_count[ii,jj,:] += counts
+
+        # compute probabilities and (half-size) confidence intervals
+        self.n_repeats += n_repeats
+        self.A_wins_prob = self.A_wins_count/self.n_repeats
+        self.A_wins_ci = 1.96*np.sqrt(  self.A_wins_prob*(1.-self.A_wins_prob) ) / np.sqrt(self.n_repeats)
 
 
     def simulate( self, n_attack: int, n_defend: int, n_repeats: int = 1, use_stats: bool = True):
@@ -153,6 +169,8 @@ class Combact():
         The function simulates a roll of dice, and returns the amount of units loss by the defening 
         side - number of units destroyed by the attacking side. The simulation can be repeated multiple
         times and can use precomputed statistics.
+
+        
 
         Args:
             n_attack (int): number of dices used during the attack. This is a number between 1 and 3. 
@@ -185,7 +203,7 @@ class Combact():
                 ii+1 : {
                     "defend_units": {
                         jj+1: {
-                            "defend_loses_units": self.a_wins_outcomes,
+                            "defence_loses_units": self.a_wins_outcomes,
                             "count": [ int(cc) for cc in self.A_wins_count[ii,jj,:]],
                             "prob": list(self.A_wins_prob[ii,jj,:]),
                             "ci": list(self.A_wins_ci[ii,jj,:])
@@ -212,11 +230,31 @@ class Combact():
                 self.A_wins_count[ii,jj,:] = stats["count"]
                 self.A_wins_prob[ii,jj,:] = stats["prob"]
                 self.A_wins_ci[ii,jj,:] = stats["ci"]
+
+
+    def verify_stats( self):
+        """Verify loaded stats are correct."""
+
+        assert np.all(self.A_wins_count.sum(axis=2) == self.n_repeats),\
+            "Events count does not match number of simulations"
+
+        p_tol = 1e-14 # 1./self.n_repeats
+        assert np.max(np.abs( self.A_wins_prob.sum(axis=2) - 1.0))<p_tol,\
+            "Probabilities do not sum to 1"
         
+        ci_max = 1.96*np.sqrt(0.25)/np.sqrt(self.n_repeats)
+        assert ci_max-np.max(self.A_wins_ci)>0.0, "Confidence intervals too large!"
+
+
+
+
+
 
 if __name__ == '__main__':
     C = Combact()
-    C.get_stats(n_repeats=1000, print_progress=True)
+
+    C.get_stats(n_repeats=0, batch_size=0, print_progress=True, reset=False)
+    C.verify_stats()
+
+    # C.get_stats(n_repeats=5000000, batch_size=5000000, print_progress=True, reset=False)
     # C.dump_stats()
-    # C.load_stats()
-                

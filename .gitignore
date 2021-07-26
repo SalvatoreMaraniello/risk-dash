@@ -2,5 +2,8 @@
 # python
 __pycache__
 
+# virtual env
+venv
+
 # sphinx doc
 docs/build
