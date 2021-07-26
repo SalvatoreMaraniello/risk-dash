@@ -23,7 +23,8 @@ class Battle():
         n_defend (int): number of defending units.
         combact (risk.combact.Combact): combact simulator.
         prob_win (dict): dictionary with summary probabilities.
-        _path_to_stats (str): Path to precomputed combact stats data.
+        _path_to_stats (str): Pa th to precomputed combact stats data.
+        max_combacts (int): Maximum number of combacts (rounds) possible in this battle. Defaults to 0.
         Probs (np.array, optional): Arrays of size `(max_number_combats, n_attack+1, n_defend+1)` 
             storing the probabilities of a battle. The element `(cc,ii,jj)` represents the probability
             that at combact (round) `cc-th` it will be observed a scenario in which attack and defense
@@ -64,7 +65,7 @@ class Battle():
         self.Units_count = None
 
         # probabilities analysis
-        self.max_combacts = None
+        self.max_combacts = 0
         self.Probs = None
         self.probs = {}
 
@@ -102,9 +103,11 @@ class Battle():
             for perm, total in zip( perm_list, total_list):
                 n_attack_combact=perm[0]
                 n_defend_combact=perm[1]
-                print( f'Round {len(self.Units_count)}, attack vs defense {n_attack_combact, n_defend_combact}: {total}' )
                 if n_attack_combact==0 or n_defend_combact==0:
                     continue
+                print( f'Round {len(self.Units_count)}, '
+                    f'attack vs defense {n_attack_combact, n_defend_combact}: {total} ongoing.' )
+
 
                 a_wins = self._conbact.simulate( n_attack_combact, n_defend_combact, total)
 
@@ -124,7 +127,6 @@ class Battle():
 
             # count over battles
             n_ongoing = sum(n_attack_now*n_defend_now!=0)
-
 
 
     def get_probabilities( self, min_prob: float = 1e-8):
