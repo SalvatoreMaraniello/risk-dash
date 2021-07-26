@@ -103,7 +103,6 @@ class Combact():
         if not path_to_stats:
             path_to_stats = risk.conf.path_data_combact
 
-        self.n_repeats = 0
         self._path_to_stats = path_to_stats
         self.a_wins_outcomes = a_wins_outcomes
         n_outcomes = len(a_wins_outcomes)
@@ -112,13 +111,17 @@ class Combact():
         self.A_wins_prob = np.zeros( (3,3,n_outcomes))
         self.A_wins_ci = np.zeros( (3,3,n_outcomes))   
 
+        # read stats by default
+        self.load_stats()
+
 
     def get_stats( self, n_repeats: int, print_progress: bool = True):
-        """Run a combact simulation `n_repeats` times, compute its statistics and store them into
+        """Run a combact simulation `n_repeats` times, compute its statistics and stores them into
         the `A_wins_*` attributes.
 
         Args:
             n_repeats (int): number of times the simulation is repeated.
+            print_progress (bool): if True, print progress of calculation. Defaults to True.
         """
 
         self.n_repeats = n_repeats
@@ -164,7 +167,7 @@ class Combact():
         if use_stats:
             # get win probabilities of attacking side
             prob = self.A_wins_prob[n_attack-1, n_defend-1, :]
-            a_wins = np.random.choice( self.a_wins_outcomes, (n_repeats,), p=prob)
+            return np.random.choice( self.a_wins_outcomes, (n_repeats,), p=prob)
    
         else:
             return simulate_combact(n_attack, n_defend, n_repeats)
