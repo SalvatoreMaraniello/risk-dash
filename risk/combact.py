@@ -242,7 +242,7 @@ class Combact():
         assert np.max(np.abs( self.A_wins_prob.sum(axis=2) - 1.0))<p_tol,\
             "Probabilities do not sum to 1"
         
-        ci_max = 1.96*np.sqrt(0.25)/np.sqrt(self.n_repeats)
+        ci_max = 1.96*0.5/np.sqrt(self.n_repeats)
         assert ci_max-np.max(self.A_wins_ci)>0.0, "Confidence intervals too large!"
 
 
