@@ -1,4 +1,4 @@
 Sphinx==4.1.1
 numpy>=1.21.1,<2.0
-matplotlib>=3.4.2,<4.0
+panel>=0.12.6,<1.0
 ipython

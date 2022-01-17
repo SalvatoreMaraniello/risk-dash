@@ -20,3 +20,9 @@ pip3 install -r requirements.txt
 cd docs
 make html
 ```
+
+
+## Launch the dashboard
+```sh
+panel serve --autoreload --show risk_dashboard.py 
+```

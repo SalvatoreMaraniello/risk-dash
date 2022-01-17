@@ -189,10 +189,17 @@ class Battle():
             }
         }
 
+        # add cumulative distribution (e.g. attack wins with at least x units)
+        for key in self.probs.keys():
+            self.probs[key]['cumdistr'] = {
+                "units": self.probs[key]['distr']['units'][1:],
+                "probs": np.cumsum(self.probs[key]['distr']['probs'][::-1])[:-1][::-1]
+            }
+
 
 
 if __name__=='__main__':
-    B = Battle(n_attack=3, n_defend=2)
+    B = Battle(n_attack=3, n_defend=5)
 
     B.get_probabilities()
     B.simulate(n_repeats=10000)
