@@ -1,12 +1,11 @@
 """Tools for simulating Rsk battles
 """
 
+from logging import warning
 import numpy as np
 
 import risk.conf
 from risk.combact import Combact
-
-
 
 
 
@@ -50,7 +49,10 @@ class Battle():
                 `risk.conf.path_data_combact`.
         """
 
-        assert n_attack>0 and n_defend>0, 'Attacking/Defending units must be at least 1'
+        assert n_attack>=0 and n_defend>=0, 'Attacking/Defending units must be at least 1'
+        if n_attack==0 or n_defend>=0:
+            warning('One or more sides have no units.')
+
         assert max(n_attack, n_defend) <= risk.conf.MAX_UNITS_BATTLE,\
             f'Attacking/Defending units must be below `risk.conf.MAX_UNITS_BATTLE = {risk.conf.MAX_UNITS_BATTLE}`'
         
@@ -68,6 +70,16 @@ class Battle():
         self.max_combacts = 0
         self.Probs = None
         self.probs = {}
+
+
+    # def roll_dice( n_attack: int = None, n_defence: int = None, update: bool = True):
+    #     """[summary]
+
+    #     Args:
+    #         n_attack (int, optional): Dice rolled by attacking side. Defaults to maximum available.
+    #         n_defence (int, optional): Dice rolled by defending side. Defaults to maximum available.
+    #         update (bool, optional): If True, updates the class `n_attack` and `n_defense`. Defaults to True.
+    #     """
 
 
     def simulate( self, n_repeats: int = None, print_progress: bool = True):
@@ -107,7 +119,6 @@ class Battle():
                     continue
                 print( f'Round {len(self.Units_count)}, '
                     f'attack vs defense {n_attack_combact, n_defend_combact}: {total} ongoing.' )
-
 
                 a_wins = self._conbact.simulate( n_attack_combact, n_defend_combact, total)
 
