@@ -24,7 +24,7 @@ COLORS = {
 
 class RiskParamViewer(param.Parameterized):
     
-    MAX_DICE = 30
+    MAX_DICE = 15
 
     # for probabilities visualisation
     n_attack = param.Integer(default=3, bounds=(0, MAX_DICE))
@@ -278,5 +278,12 @@ D = pn.Column(
 
 
 D.servable()
-D.save( './risk-dashboard-static.html', resource=INLINE)
+D.save( './risk-dashboard-static.html', 
+    resource=INLINE, 
+    embed=True, 
+    embed_states={ 
+        attack_units_selector: [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15],
+        defence_units_selector: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15]
+        }
+    )
 

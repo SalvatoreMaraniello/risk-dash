@@ -26,3 +26,8 @@ make html
 ```sh
 panel serve --autoreload --show risk_dashboard.py 
 ```
+
+
+## Build static dashboard
+
+This will not allow interactive battles, but it will embed probability plots.
