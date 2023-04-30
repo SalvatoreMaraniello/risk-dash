@@ -37,7 +37,7 @@ class Battle():
             units. Defaults to None.
     """
 
-    def __init__( self, n_attack: int, n_defend: int, path_to_stats: str = None):
+    def __init__( self, n_attack: int, n_defend: int, max_defending_units: int = 3, path_to_stats: str = None):
         """Initialise class.
 
         Args:
@@ -45,6 +45,8 @@ class Battle():
                 include any unit left behind. E.g., if you are attacking from a territory with 4
                 units, you should set `n_attack<4`.
             n_defend (int): number of defending units.
+            max_defending_units (int, optional). Maximum amaunt of defending units that can be employed 
+                in a single combact. Defaults to 3.
             path_to_stats (str, optional): [description]. Defaults to `None` sets path to 
                 `risk.conf.path_data_combact`.
         """
@@ -58,7 +60,11 @@ class Battle():
         
         self.n_attack = n_attack
         self.n_defend = n_defend
-        
+
+        # Battle parameeters
+        self.max_defending_units = max_defending_units
+        self.max_attacking_units = 3
+
         # Combact class
         self._conbact = Combact( path_to_stats)
 
@@ -109,7 +115,10 @@ class Battle():
         n_ongoing = self.n_repeats
         while n_ongoing>0:
             # compute unique combinations attack vs defend
-            N_combact = np.vstack( ( np.clip( n_attack_now, 0, 3), np.clip( n_defend_now, 0, 3))).T
+            N_combact = np.vstack( ( 
+                np.clip( n_attack_now, 0, self.max_attacking_units), 
+                np.clip( n_defend_now, 0, self.max_defending_units))
+                ).T
             perm_list, total_list = np.unique(N_combact, axis=0, return_counts=True)
 
             for perm, total in zip( perm_list, total_list):
@@ -161,7 +170,7 @@ class Battle():
                     continue
 
                 # determine attack/defend side
-                n_attack, n_defend = min(3, ii), min(3, jj)
+                n_attack, n_defend = min(self.max_attacking_units, ii), min(self.max_defending_units, jj)
                 max_units_lost = min(n_attack, n_defend)
 
                 # get probabilities of attack side winning

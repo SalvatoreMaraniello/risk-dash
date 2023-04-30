@@ -29,6 +29,8 @@ class RiskParamViewer(param.Parameterized):
     # for probabilities visualisation
     n_attack = param.Integer(default=3, bounds=(0, MAX_DICE))
     n_defense = param.Integer(default=3, bounds=(0, MAX_DICE))
+
+    max_defending_units = param.Integer(default=3, bounds=(2,3))
     probabilities = param.Dict(default={"attack": None, "defense": None})
 
     # for interactive simulation
@@ -42,7 +44,7 @@ class RiskParamViewer(param.Parameterized):
 
     @param.depends('n_attack', 'n_defense', watch=True)
     def _update_probabilities(self):
-        B = risk.battle.Battle( self.n_attack, self.n_defense)
+        B = risk.battle.Battle( self.n_attack, self.n_defense, self.max_defending_units)
         B.get_probabilities()
         self.probabilities = B.probs
 
@@ -56,7 +58,7 @@ class RiskParamViewer(param.Parameterized):
     def roll( self):
 
         n_attack = min( 3, self.n_attack)
-        n_defense = min( 3, self.n_defense)
+        n_defense = min( self.max_defending_units, self.n_defense)
         n = min( n_attack, n_defense)
         
         # Simulate dice roll
@@ -234,15 +236,20 @@ roll_button = pn.widgets.Button.from_param(
     viewer.param.roll_action, name='🎲  Roll dice!', button_type='primary', width=100
 )
 
+max_defence_units_selector = pn.widgets.IntSlider.from_param(
+    viewer.param.max_defending_units, name='Max. Allowed Defending Units', step=1)
+
 
 # settings
 D = pn.Column(
+    pn.Row(
+        f'''# Risk Battle Simulator\n''',
 
-    f'''# Risk Battle Simulator\n''',
-
-    '''Set the number of attacking and defending units. Roll dice to simulate a battle. '''
-    '''The dashboard will automatically update win/lose probabilities as units are lost!\n\n'''
-    '''**Note:** attacking units do not include any units left behind.''',
+        '''Set the number of attacking and defending units. Roll dice to simulate a battle. '''
+        '''The dashboard will automatically update win/lose probabilities as units are lost!\n\n'''
+        '''**Note:** attacking units do not include any units left behind.''',
+        pn.panel( max_defence_units_selector, width=100),
+    ),
 
     pn.Row(
         pn.Column(
@@ -278,12 +285,12 @@ D = pn.Column(
 
 
 D.servable()
-D.save( './risk-dashboard-static.html', 
-    resource=INLINE, 
-    embed=True, 
-    embed_states={ 
-        attack_units_selector: [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15],
-        defence_units_selector: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15]
-        }
-    )
+# D.save( './risk-dashboard-static.html', 
+#     resource=INLINE, 
+#     embed=True, 
+#     embed_states={ 
+#         attack_units_selector: [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15],
+#         defence_units_selector: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15]
+#         }
+#     )
 

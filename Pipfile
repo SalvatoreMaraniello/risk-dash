@@ -1,0 +1,15 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+sphinx = "==4.1.1"
+numpy = ">=1.21.1,<2.0"
+panel = "<1.0,>=0.12.6"
+ipython = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"
